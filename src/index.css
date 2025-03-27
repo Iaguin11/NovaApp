@@ -1,0 +1,121 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 355 28% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 355 28% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 355 28% 12%;
+
+    --primary: 8 80% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 355 28% 12%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 8 20% 95%;
+    --muted-foreground: 355 10% 45%;
+
+    --accent: 8 60% 95%;
+    --accent-foreground: 355 28% 12%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 8 20% 90%;
+    --input: 8 20% 90%;
+    --ring: 8 70% 50%;
+
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: 355 28% 12%;
+    --foreground: 0 0% 98%;
+
+    --card: 355 30% 10%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 355 30% 10%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 8 80% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 8 20% 20%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 8 20% 20%;
+    --muted-foreground: 8 10% 70%;
+
+    --accent: 8 20% 20%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 8 20% 20%;
+    --input: 8 20% 20%;
+    --ring: 8 70% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "ss01", "ss02", "cv01", "cv02", "cv03";
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-medium tracking-tight;
+  }
+  
+  h1 {
+    @apply text-4xl;
+  }
+  
+  h2 {
+    @apply text-3xl;
+  }
+  
+  h3 {
+    @apply text-2xl;
+  }
+  
+  .glass {
+    @apply backdrop-blur-md bg-white/5 border border-white/10 shadow-lg;
+  }
+  
+  .card-transition {
+    @apply transition-all duration-300 ease-in-out;
+  }
+  
+  .page-transition {
+    @apply animate-fadeIn;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  .text-gradient {
+    @apply bg-gradient-to-br from-mentorRed to-mentorRed-dark bg-clip-text text-transparent;
+  }
+}
