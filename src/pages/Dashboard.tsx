@@ -6,7 +6,6 @@ import { AnimatedContainer } from "@/utils/animations";
 import { ChevronRight, LayoutDashboard, ListChecks, Plus, ShoppingBag, User } from "lucide-react";
 
 const Dashboard = () => {
-  // This would be fetched from an API in a real application
   const recentLists = [
     { id: "1", name: "Supermercado", itemCount: 10, completedCount: 3, date: "2023-10-15" },
     { id: "2", name: "Farmácia", itemCount: 5, completedCount: 2, date: "2023-10-12" },
