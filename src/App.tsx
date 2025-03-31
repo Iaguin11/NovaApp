@@ -13,6 +13,7 @@ import ShoppingLists from "./pages/ShoppingLists";
 import ShoppingListDetail from "./pages/ShoppingListDetail";
 import NotFound from "./pages/NotFound";
 import { Navbar } from "./components/Navbar";
+import { AuthProvider } from "./contexts/AuthContext";
 
 const queryClient = new QueryClient();
 
@@ -20,22 +21,24 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider defaultTheme="light">
       <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Navbar />
-          <main className="pt-16">
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/shopping-lists" element={<ShoppingLists />} />
-              <Route path="/shopping-lists/:id" element={<ShoppingListDetail />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </main>
-        </BrowserRouter>
+        <AuthProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Navbar />
+            <main className="pt-16">
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/shopping-lists" element={<ShoppingLists />} />
+                <Route path="/shopping-lists/:id" element={<ShoppingListDetail />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </main>
+          </BrowserRouter>
+        </AuthProvider>
       </TooltipProvider>
     </ThemeProvider>
   </QueryClientProvider>

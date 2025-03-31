@@ -1,14 +1,18 @@
 
 import { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ThemeToggle } from "./ui/ThemeToggle";
 import { Button } from "@/components/ui/button";
-import { Menu, X } from "lucide-react";
+import { LogOut, Menu, User, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const navigate = useNavigate()
+  const { user, isAuthenticated, logout} = useAuth()
   const location = useLocation();
   
   // Close mobile menu when route changes
@@ -26,7 +30,11 @@ export function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const isLoggedIn = false; // This will be replaced with actual auth state
+  const handleLogout = () => {
+    logout()
+    toast.success("Sessão encerrada com sucesso.")
+    navigate("/")
+  }
 
   const navLinks = [
     { name: "Início", path: "/" },
@@ -67,11 +75,19 @@ export function Navbar() {
           <div className="flex items-center space-x-2">
             <ThemeToggle />
             
-            {isLoggedIn ? (
-              <Button asChild variant="ghost">
-                <Link to="/dashboard">Dashboard</Link>
-              </Button>
-            ) : (
+            {isAuthenticated ? (
+              <div className="flex items-center space-x-2">
+                <Button asChild variant="ghost">
+                  <Link to="/dashboard" className="flex items-center space-x-2">
+                    <User className="h-4 w-4"/>
+                    <span>{user?.name}</span>
+                  </Link>
+                </Button>
+                <Button onClick={handleLogout} variant="ghost" size="icon">
+                  <LogOut className="h-4 w-4"/>
+                </Button>
+              </div>
+             ) : (
               <div className="flex items-center space-x-2">
                 <Button asChild variant="ghost">
                   <Link to="/login">Entrar</Link>
@@ -115,10 +131,19 @@ export function Navbar() {
                 </Link>
               ))}
               
-              {isLoggedIn ? (
-                <Button asChild className="w-full justify-start" variant="ghost">
-                  <Link to="/dashboard">Dashboard</Link>
-                </Button>
+              {isAuthenticated ? (
+                <div className="flex flex-col space-y-2 pt-2 border-t">
+                  <Button asChild variant="ghost" className="justify-start">
+                    <Link to="/dashboard" className="flex items-center space-x-2">
+                      <User className="h-4 w-" />
+                      <span>{user?.name}</span>
+                    </Link>
+                  </Button>
+                  <Button onClick={handleLogout} variant="outline" className="flex items-center space-x-2">
+                    <LogOut className="h-4 w-4"/>
+                    <span>Sair</span>
+                  </Button>
+                </div>
               ) : (
                 <div className="flex flex-col space-y-2 pt-2 border-t">
                   <Button asChild variant="outline">
