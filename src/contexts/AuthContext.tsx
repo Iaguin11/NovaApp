@@ -22,11 +22,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Simulate checking for a stored token on component mount
   useEffect(() => {
     const checkAuthStatus = async () => {
       try {
-        // In a real app, we would validate the token with the backend
         const storedUser = localStorage.getItem("user");
         
         if (storedUser) {
@@ -46,18 +44,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
     
     try {
-      // In a real app, this would be an API call
-      // Simulate a network request
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Mock user data
       const userData: User = {
         id: "1",
         name: "Usuário Teste",
         email,
       };
       
-      // Save to localStorage
       localStorage.setItem("user", JSON.stringify(userData));
       setUser(userData);
     } catch (error) {
@@ -72,18 +66,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
     
     try {
-      // In a real app, this would be an API call
-      // Simulate a network request
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Mock user data
       const userData: User = {
         id: Date.now().toString(),
         name,
         email,
       };
       
-      // Save to localStorage
       localStorage.setItem("user", JSON.stringify(userData));
       setUser(userData);
     } catch (error) {

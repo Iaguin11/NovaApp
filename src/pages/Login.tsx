@@ -1,28 +1,33 @@
 
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { AnimatedContainer } from "@/utils/animations";
 import { Eye, EyeOff, LogIn } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 const Login = () => {
-  const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const {login, isLoading} = useAuth()
   const [showPassword, setShowPassword] = useState(false);
+  const navigate = useNavigate()
   
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setLoading(true);
-    
-    // Simulate login process
-    setTimeout(() => {
-      setLoading(false);
-      // In a real app, we would handle login logic here
-      console.log("Login attempted");
-    }, 1500);
-  };
+    try {
+      await login(email, password)
+      toast.success("Login realizado com sucesso.")
+      navigate("/dashboard")
+    } catch (error) {
+      console.log("Login error:", error)
+      toast.error("Error ao fazer login. Verifique suas credenciais.")
+    }
+  }
   
   return (
     <div className="min-h-screen flex items-center justify-center p-4 page-transition">
@@ -44,7 +49,9 @@ const Login = () => {
                     type="email" 
                     placeholder="seu@email.com" 
                     required 
-                    disabled={loading}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={isLoading}
                   />
                 </div>
                 <div className="space-y-2">
@@ -63,7 +70,9 @@ const Login = () => {
                       type={showPassword ? "text" : "password"} 
                       placeholder="••••••••" 
                       required 
-                      disabled={loading}
+                      value={password}
+                      onChange={(e)=> setPassword(e.target.value)}
+                      disabled={isLoading}
                     />
                     <Button
                       type="button"
@@ -83,8 +92,8 @@ const Login = () => {
                     </Button>
                   </div>
                 </div>
-                <Button className="w-full" type="submit" disabled={loading}>
-                  {loading ? (
+                <Button className="w-full" type="submit" disabled={isLoading}>
+                  {isLoading ? (
                     <div className="flex items-center">
                       <div className="animate-spin mr-2 h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
                       Entrando...
@@ -118,10 +127,10 @@ const Login = () => {
               </div>
               
               <div className="grid grid-cols-2 gap-4">
-                <Button variant="outline" className="w-full" disabled={loading}>
+                <Button variant="outline" className="w-full" disabled={isLoading}>
                   Google
                 </Button>
-                <Button variant="outline" className="w-full" disabled={loading}>
+                <Button variant="outline" className="w-full" disabled={isLoading}>
                   Facebook
                 </Button>
               </div>
@@ -133,4 +142,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default Login

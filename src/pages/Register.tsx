@@ -1,27 +1,39 @@
 
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { AnimatedContainer } from "@/utils/animations";
 import { Eye, EyeOff, UserPlus } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 const Register = () => {
-  const [loading, setLoading] = useState(false);
+  const [name, setName] = useState("")
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false);
+  const {register, isLoading} = useAuth()
+  const navigate = useNavigate()
   
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setLoading(true);
+
+    if(password.length < 6){
+      toast.error("A senha deve ter pelo menos 6 caracteres.")
+      return
+    }
+    try {
+      await register(name, email, password)
+      toast.success("Cadastro realizado com sucesso.")
+      navigate("/dashboard")
+    } catch (error) {
+      console.log("Registration error:", error)
+      toast.error("Erro ao realizar cadastro. Tente novamente.")
+    }
     
-    // Simulate registration process
-    setTimeout(() => {
-      setLoading(false);
-      // In a real app, we would handle registration logic here
-      console.log("Registration attempted");
-    }, 1500);
   };
   
   return (
@@ -43,7 +55,9 @@ const Register = () => {
                     id="name" 
                     placeholder="Seu nome completo" 
                     required 
-                    disabled={loading}
+                    value={name}
+                    onChange={(e)=> setName(e.target.value)}
+                    disabled={isLoading}
                   />
                 </div>
                 <div className="space-y-2">
@@ -53,7 +67,9 @@ const Register = () => {
                     type="email" 
                     placeholder="seu@email.com" 
                     required 
-                    disabled={loading}
+                    value={email}
+                    onChange={(e)=> setEmail(e.target.value)}
+                    disabled={isLoading}
                   />
                 </div>
                 <div className="space-y-2">
@@ -64,7 +80,9 @@ const Register = () => {
                       type={showPassword ? "text" : "password"} 
                       placeholder="••••••••" 
                       required 
-                      disabled={loading}
+                      value={password}
+                      onChange={(e)=> setPassword(e.target.value)}
+                      disabled={isLoading}
                     />
                     <Button
                       type="button"
@@ -84,11 +102,11 @@ const Register = () => {
                     </Button>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    A senha deve ter pelo menos 8 caracteres
+                    A senha deve ter pelo menos 6 caracteres
                   </p>
                 </div>
-                <Button className="w-full" type="submit" disabled={loading}>
-                  {loading ? (
+                <Button className="w-full" type="submit" disabled={isLoading}>
+                  {isLoading ? (
                     <div className="flex items-center">
                       <div className="animate-spin mr-2 h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
                       Registrando...
@@ -122,10 +140,10 @@ const Register = () => {
               </div>
               
               <div className="grid grid-cols-2 gap-4">
-                <Button variant="outline" className="w-full" disabled={loading}>
+                <Button variant="outline" className="w-full" disabled={isLoading}>
                   Google
                 </Button>
-                <Button variant="outline" className="w-full" disabled={loading}>
+                <Button variant="outline" className="w-full" disabled={isLoading}>
                   Facebook
                 </Button>
               </div>
