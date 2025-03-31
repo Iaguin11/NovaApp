@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,20 +9,22 @@ import { AnimatedContainer } from "@/utils/animations";
 import { ChevronRight, ListPlus, Plus, Search, ShoppingBag, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
-// Mock data - would come from a database in a real app
-const MOCK_LISTS = [
-  { id: "1", name: "Supermercado", items: 10, completed: 3, date: "2023-10-15" },
-  { id: "2", name: "Farmácia", items: 5, completed: 2, date: "2023-10-12" },
-  { id: "3", name: "Material Escolar", items: 8, completed: 0, date: "2023-10-10" },
-  { id: "4", name: "Casa e Jardim", items: 12, completed: 6, date: "2023-10-05" },
-  { id: "5", name: "Eletrônicos", items: 3, completed: 1, date: "2023-10-01" },
-];
+import { useToast } from "@/hooks/use-toast";
+import { calculateListStats, deleteShoppingList, getShoppingLists, saveShoppingList, ShoppingList } from "@/utils/shoppingListsStorage";
+
+
 
 const ShoppingLists = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [lists, setLists] = useState(MOCK_LISTS);
   const [newListName, setNewListName] = useState("");
+  const [lists, setLists] = useState<ShoppingList[]>([])
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const {toast} = useToast()
+
+  useEffect(() => {
+    const storedList = getShoppingLists()
+    setLists(storedList)
+  }, [])
   
   const filteredLists = lists.filter((list) =>
     list.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -30,22 +32,39 @@ const ShoppingLists = () => {
   
   const handleCreateList = () => {
     if (newListName.trim()) {
-      const newList = {
+      const newList: ShoppingList = {
         id: Date.now().toString(),
         name: newListName,
-        items: 0,
-        completed: 0,
+        items: [],
         date: new Date().toISOString().split("T")[0]
       };
+
+      //save to storage
+      saveShoppingList(newList)
       
+      //update state
       setLists([newList, ...lists]);
       setNewListName("");
       setIsDialogOpen(false);
+
+      toast({
+        title: "Lista criada",
+        description: `A lista ${newListName} foi criada com sucesso.`,
+      })
     }
   };
   
-  const handleDeleteList = (id: string) => {
+  const handleDeleteList = (id: string, name: string) => {
+    //delete from storage
+    deleteShoppingList(id)
+    //update state
     setLists(lists.filter(list => list.id !== id));
+
+    toast({
+      title: "Lista excluída",
+      description:` A lista ${name} foi excluída.`,
+      variant: "destructive",
+    })
   };
   
   return (
@@ -76,6 +95,7 @@ const ShoppingLists = () => {
                   placeholder="Nome da lista"
                   value={newListName}
                   onChange={(e) => setNewListName(e.target.value)}
+                  autoFocus
                 />
               </div>
               <DialogFooter>
@@ -119,52 +139,56 @@ const ShoppingLists = () => {
           <CardContent>
             {filteredLists.length > 0 ? (
               <div className="space-y-3">
-                {filteredLists.map((list) => (
-                  <div 
-                    key={list.id}
-                    className="flex items-center justify-between p-4 rounded-lg border hover:bg-accent/50 transition-colors"
-                  >
-                    <div className="flex items-center">
-                      <div className="bg-primary/10 text-primary p-2 rounded-md mr-4">
-                        <ShoppingBag className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <div className="flex items-center">
-                          <h3 className="font-medium mr-2">{list.name}</h3>
-                          <Badge variant="outline" className="text-xs">
-                            {list.items} {list.items === 1 ? "item" : "itens"}
-                          </Badge>
+                {filteredLists.map((list) => {
+                  const stats = calculateListStats(list)
+                  
+                  return ( 
+                    <div 
+                      key={list.id}
+                      className="flex items-center justify-between p-4 rounded-lg border hover:bg-accent/50 transition-colors"
+                    >
+                      <div className="flex items-center">
+                        <div className="bg-primary/10 text-primary p-2 rounded-md mr-4">
+                          <ShoppingBag className="h-5 w-5" />
                         </div>
-                        <div className="flex items-center mt-1">
-                          <div className="h-2 bg-muted rounded-full w-32 mr-2">
-                            <div 
-                              className="h-2 bg-primary rounded-full" 
-                              style={{ width: `${(list.completed / list.items) * 100}%` }}
-                            />
+                        <div>
+                          <div className="flex items-center">
+                            <h3 className="font-medium mr-2">{list.name}</h3>
+                            <Badge variant="outline" className="text-xs">
+                              {stats.totalItem} {stats.totalItem === 1 ? "item" : "itens"}
+                            </Badge>
                           </div>
-                          <span className="text-xs text-muted-foreground">
-                            {list.completed} de {list.items} comprados
-                          </span>
+                          <div className="flex items-center mt-1">
+                            <div className="h-2 bg-muted rounded-full w-32 mr-2">
+                              <div 
+                                className="h-2 bg-primary rounded-full" 
+                                style={{ width: `${stats.progress}%` }}
+                              />
+                            </div>
+                            <span className="text-xs text-muted-foreground">
+                              {stats.completedItems} de {stats.totalItem} comprados
+                            </span>
+                          </div>
                         </div>
                       </div>
+                      <div className="flex items-center">
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => handleDeleteList(list.id, list.name)}
+                          className="text-muted-foreground hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" asChild>
+                          <Link to={`/shopping-lists/${list.id}`}>
+                            <ChevronRight className="h-5 w-5" />
+                          </Link>
+                        </Button>
+                      </div>
                     </div>
-                    <div className="flex items-center">
-                      <Button 
-                        variant="ghost" 
-                        size="icon"
-                        onClick={() => handleDeleteList(list.id)}
-                        className="text-muted-foreground hover:text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" asChild>
-                        <Link to={`/shopping-lists/${list.id}`}>
-                          <ChevronRight className="h-5 w-5" />
-                        </Link>
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+                  )
+              })}
               </div>
             ) : (
               <div className="text-center py-8">

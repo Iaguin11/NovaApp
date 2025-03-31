@@ -1,75 +1,41 @@
 
-import { useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { AnimatedContainer, StaggeredList } from "@/utils/animations";
 import { ArrowLeft, CheckCircle, Edit2, Plus, Save, Search, ShoppingCart, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { ShoppingListItem } from "@/components/ShoppingListItem";
 import { AddItemModal } from "@/components/AddItemModal";
 import { cn } from "@/lib/utils";
+import { deleteShoppingList, getShoppingListById, saveShoppingList, ShoppingListItem } from "@/utils/shoppingListsStorage";
+import { ShoppingListItem as ShoppingListItemComponent} from "@/components/ShoppingListItem";
+import { useToast } from "@/hooks/use-toast";
 
-interface Item {
-  id: string;
-  name: string;
-  quantity: string;
-  checked: boolean;
-}
-
-// Mock data - would come from a database in a real app
-const MOCK_LISTS = {
-  "1": {
-    id: "1",
-    name: "Supermercado",
-    items: [
-      { id: "1-1", name: "Maçãs", quantity: "1kg", checked: true },
-      { id: "1-2", name: "Arroz", quantity: "5kg", checked: true },
-      { id: "1-3", name: "Leite", quantity: "2L", checked: false },
-      { id: "1-4", name: "Pão", quantity: "1 pacote", checked: false },
-      { id: "1-5", name: "Café", quantity: "500g", checked: false },
-      { id: "1-6", name: "Queijo", quantity: "300g", checked: false },
-      { id: "1-7", name: "Ovos", quantity: "1 dúzia", checked: false },
-      { id: "1-8", name: "Manteiga", quantity: "200g", checked: false },
-      { id: "1-9", name: "Banana", quantity: "6 unidades", checked: false },
-      { id: "1-10", name: "Açúcar", quantity: "1kg", checked: true },
-    ],
-  },
-  "2": {
-    id: "2",
-    name: "Farmácia",
-    items: [
-      { id: "2-1", name: "Analgésico", quantity: "1 caixa", checked: true },
-      { id: "2-2", name: "Band-aids", quantity: "1 caixa", checked: true },
-      { id: "2-3", name: "Vitamina C", quantity: "30 comprimidos", checked: false },
-      { id: "2-4", name: "Protetor solar", quantity: "1 frasco", checked: false },
-      { id: "2-5", name: "Sabonete", quantity: "3 unidades", checked: false },
-    ],
-  },
-  "3": {
-    id: "3",
-    name: "Material Escolar",
-    items: [
-      { id: "3-1", name: "Cadernos", quantity: "3 unidades", checked: false },
-      { id: "3-2", name: "Canetas", quantity: "1 pacote", checked: false },
-      { id: "3-3", name: "Lápis", quantity: "2 unidades", checked: false },
-      { id: "3-4", name: "Borracha", quantity: "1 unidade", checked: false },
-      { id: "3-5", name: "Régua", quantity: "1 unidade", checked: false },
-      { id: "3-6", name: "Mochila", quantity: "1 unidade", checked: false },
-      { id: "3-7", name: "Apontador", quantity: "1 unidade", checked: false },
-      { id: "3-8", name: "Cola", quantity: "1 tubo", checked: false },
-    ],
-  },
-};
 
 const ShoppingListDetail = () => {
   const { id = "" } = useParams<{ id: string }>();
-  const [list, setList] = useState(MOCK_LISTS[id as keyof typeof MOCK_LISTS]);
+  const [list, setList] = useState<{
+    id: string,
+    name: string,
+    items: ShoppingListItem[]
+    date: string
+  } | null>(null)
   const [searchTerm, setSearchTerm] = useState("");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [listName, setListName] = useState(list?.name || "");
+  const [listName, setListName] = useState("");
+  const { toast } = useToast()
+  const navigate = useNavigate()
+
+  useEffect(()=> {
+    const storedList = getShoppingListById(id)
+    if(storedList) {
+      setList(storedList)
+      setListName(storedList.name)
+    }
+  }, [id])
   
   if (!list) {
     return (
@@ -94,44 +60,84 @@ const ShoppingListDetail = () => {
   );
   
   const handleToggleItem = (id: string, checked: boolean) => {
-    setList({
+    const updateList = {
       ...list,
       items: list.items.map(item =>
         item.id === id ? { ...item, checked } : item
       ),
-    });
+    };
+    saveShoppingList(updateList)
+    setList(updateList)
   };
   
   const handleDeleteItem = (id: string) => {
-    setList({
+    const updatedList = {
       ...list,
       items: list.items.filter(item => item.id !== id),
-    });
+    };
+    saveShoppingList(updatedList)
+    setList(updatedList)
+    toast({
+      description: "Item removido da lista."
+    })
   };
   
   const handleAddItem = (name: string, quantity: string) => {
-    const newItem: Item = {
+    const newItem: ShoppingListItem = {
       id: `${list.id}-${Date.now()}`,
       name,
       quantity,
       checked: false,
     };
     
-    setList({
+    const updatedList = {
       ...list,
       items: [...list.items, newItem],
-    });
+    };
+    saveShoppingList(updatedList)
+    setList(updatedList)
+    toast({
+      description: `${name} adicionado à lista.`
+    })
   };
   
   const handleSaveListName = () => {
     if (listName.trim()) {
-      setList({
+      const updatedList = {
         ...list,
         name: listName,
-      });
-      setIsEditing(false);
+      };
+      saveShoppingList(updatedList)
+      setList(updatedList)
+      setIsEditing(false)
+
+      toast({
+        description: "Nome da lista atualizado."
+      }); 
     }
   };
+  const handleDeleteList = () => {
+    deleteShoppingList(list.id)
+
+    toast({
+      title: "Lista excluída",
+      description: `A lista ${list.name} foi excluída.`
+    })
+    navigate("/shopping-lists")
+  }
+  
+  const handleClearCheckedItems = () => {
+    const updatedList = {
+      ...list,
+      items: list.items.filter(item => !item.checked)
+    };
+    saveShoppingList(updatedList)
+    setList(updatedList)
+    
+    toast({
+      description: "Itens comprados removidos da lista."
+    })
+  }
   
   const pendingItems = filteredItems.filter(item => !item.checked);
   const checkedItems = filteredItems.filter(item => item.checked);
@@ -192,10 +198,16 @@ const ShoppingListDetail = () => {
             </div>
           </div>
           
-          <Button onClick={() => setIsAddModalOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Adicionar Item
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleDeleteList} className="text-destructive">
+              <Trash2 className="h-4 w-4 mr-2"/>
+              Excluir lista
+            </Button>
+            <Button onClick={()=> setIsAddModalOpen(true)}>
+              <Plus className="mr-2 h-4 w-4"/>
+              Adicionar Item
+            </Button>
+          </div>
         </div>
       </AnimatedContainer>
       
@@ -237,7 +249,7 @@ const ShoppingListDetail = () => {
               {pendingItems.length > 0 ? (
                 <StaggeredList animation="fadeIn" baseDelay={0} staggerAmount={50}>
                   {pendingItems.map(item => (
-                    <ShoppingListItem
+                    <ShoppingListItemComponent
                       key={item.id}
                       id={item.id}
                       name={item.name}
@@ -257,7 +269,6 @@ const ShoppingListDetail = () => {
           </Card>
         </AnimatedContainer>
         
-        {/* Completed Items */}
         {checkedItems.length > 0 && (
           <AnimatedContainer animation="slideUp" delay={300}>
             <Card>
@@ -274,12 +285,7 @@ const ShoppingListDetail = () => {
                       variant="outline"
                       size="sm"
                       className="text-xs h-8"
-                      onClick={() => {
-                        setList({
-                          ...list,
-                          items: list.items.filter(item => !item.checked),
-                        });
-                      }}
+                      onClick={handleClearCheckedItems}
                     >
                       <Trash2 className="h-3 w-3 mr-1" />
                       Limpar comprados
@@ -291,7 +297,7 @@ const ShoppingListDetail = () => {
                 <div className={cn("space-y-2", checkedItems.length > 5 && "max-h-60 overflow-y-auto pr-2")}>
                   <StaggeredList animation="fadeIn" baseDelay={0} staggerAmount={50}>
                     {checkedItems.map(item => (
-                      <ShoppingListItem
+                      <ShoppingListItemComponent
                         key={item.id}
                         id={item.id}
                         name={item.name}
