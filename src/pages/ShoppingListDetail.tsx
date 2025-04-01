@@ -30,12 +30,21 @@ const ShoppingListDetail = () => {
   const navigate = useNavigate()
 
   useEffect(()=> {
-    const storedList = getShoppingListById(id)
-    if(storedList) {
-      setList(storedList)
-      setListName(storedList.name)
+    const loadList = () => {
+      const storedList = getShoppingListById(id)
+      if(storedList) {
+        setList(storedList)
+        setListName(storedList.name)
+      }
     }
+    loadList()
   }, [id])
+
+  useEffect(() => {
+    if(list) {
+      saveShoppingList(list)
+    }
+  }, [list])
   
   if (!list) {
     return (
@@ -66,7 +75,6 @@ const ShoppingListDetail = () => {
         item.id === id ? { ...item, checked } : item
       ),
     };
-    saveShoppingList(updateList)
     setList(updateList)
   };
   
@@ -75,7 +83,6 @@ const ShoppingListDetail = () => {
       ...list,
       items: list.items.filter(item => item.id !== id),
     };
-    saveShoppingList(updatedList)
     setList(updatedList)
     toast({
       description: "Item removido da lista."
@@ -94,7 +101,6 @@ const ShoppingListDetail = () => {
       ...list,
       items: [...list.items, newItem],
     };
-    saveShoppingList(updatedList)
     setList(updatedList)
     toast({
       description: `${name} adicionado à lista.`
@@ -107,7 +113,6 @@ const ShoppingListDetail = () => {
         ...list,
         name: listName,
       };
-      saveShoppingList(updatedList)
       setList(updatedList)
       setIsEditing(false)
 
@@ -131,7 +136,6 @@ const ShoppingListDetail = () => {
       ...list,
       items: list.items.filter(item => !item.checked)
     };
-    saveShoppingList(updatedList)
     setList(updatedList)
     
     toast({
@@ -224,7 +228,6 @@ const ShoppingListDetail = () => {
       </AnimatedContainer>
       
       <div className="space-y-6">
-        {/* Pending Items */}
         <AnimatedContainer animation="slideUp" delay={200}>
           <Card>
             <CardHeader className="pb-3">
