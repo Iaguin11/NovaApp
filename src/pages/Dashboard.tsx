@@ -78,7 +78,7 @@ const Dashboard = () => {
               </div>
               <Button>
                 <Plus className="mr-2 h-4 w-4" />
-                Nova Lista
+                <Link to="">Nova Lista</Link>
               </Button>
             </div>
           </AnimatedContainer>
