@@ -4,13 +4,62 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AnimatedContainer } from "@/utils/animations";
 import { ChevronRight, LayoutDashboard, ListChecks, Plus, ShoppingBag, User } from "lucide-react";
+import { useEffect, useState } from "react";
+import { calculateListStats, getShoppingLists, ShoppingList } from "@/utils/shoppingListsStorage";
+import { v4 as uuidv4 } from 'uuid';
+import { toast } from "@/hooks/use-toast";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+
 
 const Dashboard = () => {
-  const recentLists = [
-    { id: "1", name: "Supermercado", itemCount: 10, completedCount: 3, date: "2023-10-15" },
-    { id: "2", name: "Farmácia", itemCount: 5, completedCount: 2, date: "2023-10-12" },
-    { id: "3", name: "Material Escolar", itemCount: 8, completedCount: 0, date: "2023-10-10" },
-  ];
+  const [isAddModalOpen, setIsAddModalOpen]= useState(false)
+  const [recentLists, setRecentLists] = useState<ShoppingList[]>([])
+  const [newListName, setNewListName] = useState("")
+
+  useEffect(()=> {
+    const storedList = getShoppingLists()
+    if(storedList.length > 0){
+      setRecentLists(storedList.slice(0, 3))
+    }else {
+      setRecentLists([
+        {
+          id:"example-1",
+          name: "Supermercado",
+          items: [
+            { id: "item-1", name: "Arroz", quantity: "1 kg", checked: false },
+            { id: "item-2", name: "Feijão", quantity: "1 kg", checked: false },
+            { id: "item-3", name: "Leite", quantity: "1 L", checked: true }
+          ],
+          date: new Date().toISOString().split("T")[0]
+        },
+        { 
+          id: "example-2", 
+          name: "Farmácia", 
+          items: [
+            { id: "item-4", name: "Vitamina C", quantity: "1 caixa", checked: false },
+            { id: "item-5", name: "Protetor Solar", quantity: "1 unidade", checked: true }
+          ], 
+          date: new Date().toISOString().split("T")[0] 
+        }
+      ])
+    } 
+  }, [])
+
+  const handleCreateList = () => {
+    if(newListName.trim()){
+      const newList: ShoppingList = {
+        id: uuidv4(),
+        name: newListName,
+        items: [],
+        date: new Date().toISOString().split("T")[0]
+      }
+      toast({
+        title: "Lista criada",
+        description:`A lista ${newListName} foi criada com sucesso.`
+      })
+    }
+  }
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-6xl page-transition">
@@ -76,10 +125,39 @@ const Dashboard = () => {
                 <h1 className="text-3xl font-bold">Dashboard</h1>
                 <p className="text-muted-foreground">Bem-vindo de volta!</p>
               </div>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                <Link to="">Nova Lista</Link>
-              </Button>
+              <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Nova Lista
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Criar Nova Lista</DialogTitle>
+                    <DialogDescription>
+                      Dê um nome para sua nova lista de compra.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="py-4">
+                    <Input 
+                      placeholder="Nome da lista"
+                      value={newListName}
+                      onChange={(e) => setNewListName(e.target.value)}
+                      autoFocus
+                    />
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={()=> setIsAddModalOpen(false)}>
+                      Cancelar
+                    </Button>
+                    <Button onClick={handleCreateList}>
+                      <Plus className="mr-2 h-4 w-4"/>
+                      Criar lista
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </div>
           </AnimatedContainer>
           
@@ -90,7 +168,10 @@ const Dashboard = () => {
                   <div>
                     <CardTitle>Listas Recentes</CardTitle>
                     <CardDescription>
-                      Suas últimas listas de compras criadas
+                      {recentLists.length > 0
+                        ? "Suas últimas listas de compras"
+                        : "Você ainda não tem listas de compras"
+                      }
                     </CardDescription>
                   </div>
                   <Button variant="outline" asChild>
@@ -100,8 +181,10 @@ const Dashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {recentLists.map((list) => (
-                    <div 
+                  {recentLists.map((list) => {
+                    const stats = calculateListStats(list)
+                    return (
+                      <div 
                       key={list.id}
                       className="flex items-center justify-between p-4 rounded-lg border hover:bg-accent/50 transition-colors"
                     >
@@ -112,7 +195,7 @@ const Dashboard = () => {
                         <div>
                           <h3 className="font-medium">{list.name}</h3>
                           <p className="text-sm text-muted-foreground">
-                            {list.completedCount} de {list.itemCount} itens comprados
+                            {stats.completedItems} de {stats.totalItem} itens comprados
                           </p>
                         </div>
                       </div>
@@ -122,7 +205,8 @@ const Dashboard = () => {
                         </Link>
                       </Button>
                     </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </CardContent>
             </Card>
