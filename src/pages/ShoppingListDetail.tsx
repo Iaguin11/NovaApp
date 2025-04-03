@@ -41,8 +41,21 @@ const ShoppingListDetail = () => {
   }, [id])
 
   useEffect(() => {
-    if(list) {
-      saveShoppingList(list)
+    const saveList = () => {
+      if(list) {
+        console.log("Saving list with", list.items.length, "items")
+        saveShoppingList({...list})
+      }
+    }
+    saveList()
+  }, [list])
+
+  useEffect(()=>{
+    return () => {
+      if(list) {
+        console.log("Saving list on exit:", list.name, "with", list.items.length, "items")
+        saveShoppingList({...list})
+      }
     }
   }, [list])
   
@@ -84,6 +97,7 @@ const ShoppingListDetail = () => {
       items: list.items.filter(item => item.id !== id),
     };
     setList(updatedList)
+
     toast({
       description: "Item removido da lista."
     })
@@ -102,6 +116,7 @@ const ShoppingListDetail = () => {
       items: [...list.items, newItem],
     };
     setList(updatedList)
+    saveShoppingList(updatedList)
     toast({
       description: `${name} adicionado à lista.`
     })
@@ -115,6 +130,8 @@ const ShoppingListDetail = () => {
       };
       setList(updatedList)
       setIsEditing(false)
+
+      saveShoppingList(updatedList)
 
       toast({
         description: "Nome da lista atualizado."
@@ -137,7 +154,7 @@ const ShoppingListDetail = () => {
       items: list.items.filter(item => !item.checked)
     };
     setList(updatedList)
-    
+    saveShoppingList(updatedList)
     toast({
       description: "Itens comprados removidos da lista."
     })
