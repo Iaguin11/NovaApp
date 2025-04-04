@@ -15,6 +15,7 @@ const Register = () => {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("")
   const {register, isLoading} = useAuth()
   const navigate = useNavigate()
   
@@ -22,6 +23,7 @@ const Register = () => {
     e.preventDefault();
 
     if(password.length < 6){
+      setError("A senha deve ter pelo menos 6 caracteres")
       toast.error("A senha deve ter pelo menos 6 caracteres.")
       return
     }
@@ -30,8 +32,10 @@ const Register = () => {
       toast.success("Cadastro realizado com sucesso.")
       navigate("/dashboard")
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Erro ao realizar cadastro. Tente novamente."
       console.log("Registration error:", error)
-      toast.error("Erro ao realizar cadastro. Tente novamente.")
+      setError(errorMessage)
+      toast.error(errorMessage)
     }
     
   };
@@ -49,6 +53,11 @@ const Register = () => {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
+                {error && (
+                  <div className="p-3 rounded-md bg-destructive/10 text-destructive text-sm">
+                    {error}
+                  </div>
+                )}
                 <div className="space-y-2">
                   <Label htmlFor="name">Nome</Label>
                   <Input 
