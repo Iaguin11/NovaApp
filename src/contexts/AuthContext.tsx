@@ -15,6 +15,26 @@ interface AuthContextType {
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
 }
+const USER_STORAGE_KEY = "user"
+const USERS_STORAGE_KEY = "registered_users"
+
+interface StoredUser extends User {
+  password: string
+}
+
+const getRegisteredUsers = (): StoredUser[] => {
+  const storedUsers = localStorage.getItem(USERS_STORAGE_KEY)
+  if(!storedUsers) return []
+  try {
+    return JSON.parse(storedUsers)
+  } catch (error) {
+    console.error("Error parsing registered users", error)
+    return []
+  }
+}
+const saveRegisteredUsers = (users: StoredUser[]): void => {
+  localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users))
+}
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -25,7 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const checkAuthStatus = async () => {
       try {
-        const storedUser = localStorage.getItem("user");
+        const storedUser = localStorage.getItem(USER_STORAGE_KEY);
         
         if (storedUser) {
           setUser(JSON.parse(storedUser));
@@ -44,19 +64,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
     
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      const registeredUsers = getRegisteredUsers()
+
+      const foundUser = registeredUsers.find(
+        user => user.email === email && user.password === password
+      )
+      if(!foundUser){
+        throw new Error("Credenciais inválidas. Email ou senha incorretos.")
+      }
+
       const userData: User = {
-        id: "1",
-        name: "Usuário Teste",
-        email,
-      };
-      
-      localStorage.setItem("user", JSON.stringify(userData));
-      setUser(userData);
+        id: foundUser.id,
+        name: foundUser.name,
+        email: foundUser.email
+      }
+
+      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userData))
+
     } catch (error) {
       console.error("Login failed:", error);
-      throw new Error("Falha ao fazer login. Verifique suas credenciais.");
+      throw new Error(error instanceof Error? error.message :"Falha ao fazer login. Verifique suas credenciais.");
     } finally {
       setIsLoading(false);
     }
@@ -66,26 +93,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
     
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const userData: User = {
+      const registeredUsers = getRegisteredUsers()
+
+      if(registeredUsers.some(user => user.email === email)){
+        throw new Error("Este email já está cadastrado.")
+      }
+
+      const newUser: StoredUser = {
         id: Date.now().toString(),
         name,
         email,
+        password,
+      }
+      
+      registeredUsers.push(newUser)
+      saveRegisteredUsers(registeredUsers)
+      
+      const userData: User = {
+        id: newUser.id,
+        name: newUser.name,
+        email: newUser.email
       };
       
-      localStorage.setItem("user", JSON.stringify(userData));
+      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userData));
       setUser(userData);
     } catch (error) {
       console.error("Registration failed:", error);
-      throw new Error("Falha ao registrar. Tente novamente mais tarde.");
+      throw new Error(error instanceof Error ? error.message : "Tente novamente mais tarde.");
     } finally {
       setIsLoading(false);
     }
   };
   
   const logout = () => {
-    localStorage.removeItem("user");
+    localStorage.removeItem(USER_STORAGE_KEY);
     setUser(null);
   };
   

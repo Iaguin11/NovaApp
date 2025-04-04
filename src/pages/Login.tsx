@@ -15,17 +15,23 @@ const Login = () => {
   const [password, setPassword] = useState("")
   const {login, isLoading} = useAuth()
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("")
   const navigate = useNavigate()
   
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setError("")
+
     try {
       await login(email, password)
       toast.success("Login realizado com sucesso.")
       navigate("/dashboard")
     } catch (error) {
-      console.log("Login error:", error)
-      toast.error("Error ao fazer login. Verifique suas credenciais.")
+      const errorMessage = error instanceof Error ? error.message : `Erro ao fazer
+      login. Verifique suas credencias.`
+      console.error("Login error:", error)
+      setError(errorMessage)
+      toast.error(errorMessage)
     }
   }
   
@@ -42,6 +48,11 @@ const Login = () => {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
+                {error && (
+                  <div className="p-3 rounded-md bg-destructive/10 text-destructive text-sm">
+                    {error}
+                  </div>
+                )}
                 <div className="space-y-2">
                   <Label htmlFor="email">E-mail</Label>
                   <Input 
