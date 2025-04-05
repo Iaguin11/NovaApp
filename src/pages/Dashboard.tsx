@@ -5,24 +5,26 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { AnimatedContainer } from "@/utils/animations";
 import { ChevronRight, LayoutDashboard, ListChecks, Plus, ShoppingBag, User } from "lucide-react";
 import { useEffect, useState } from "react";
-import { calculateListStats, getShoppingLists, ShoppingList } from "@/utils/shoppingListsStorage";
+import { calculateListStats, getShoppingLists, saveShoppingList, ShoppingList } from "@/utils/shoppingListsStorage";
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { useAuth } from "@/contexts/AuthContext";
 
 
 const Dashboard = () => {
   const [isAddModalOpen, setIsAddModalOpen]= useState(false)
   const [recentLists, setRecentLists] = useState<ShoppingList[]>([])
   const [newListName, setNewListName] = useState("")
+  const { user } = useAuth()
 
   useEffect(()=> {
-    const storedList = getShoppingLists()
+    const storedList = getShoppingLists(user?.id)
     if(storedList.length > 0){
       setRecentLists(storedList.slice(0, 3))
     }else {
-      setRecentLists([
+      const exampleLists = [
         {
           id:"example-1",
           name: "Supermercado",
@@ -41,10 +43,14 @@ const Dashboard = () => {
             { id: "item-5", name: "Protetor Solar", quantity: "1 unidade", checked: true }
           ], 
           date: new Date().toISOString().split("T")[0] 
-        }
-      ])
-    } 
-  }, [])
+        },
+      ]
+      if(user && storedList.length === 0){
+        exampleLists.forEach(list => saveShoppingList(list, user.id))
+      }
+      setRecentLists(exampleLists)
+    }
+  }, [user])
 
   const handleCreateList = () => {
     if(newListName.trim()){
@@ -54,6 +60,8 @@ const Dashboard = () => {
         items: [],
         date: new Date().toISOString().split("T")[0]
       }
+      saveShoppingList(newList, user?.id)
+      
       toast({
         title: "Lista criada",
         description:`A lista ${newListName} foi criada com sucesso.`

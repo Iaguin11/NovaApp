@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 
 import { useToast } from "@/hooks/use-toast";
 import { calculateListStats, deleteShoppingList, getShoppingLists, saveShoppingList, ShoppingList } from "@/utils/shoppingListsStorage";
+import { useAuth } from "@/contexts/AuthContext";
 
 
 
@@ -19,12 +20,13 @@ const ShoppingLists = () => {
   const [newListName, setNewListName] = useState("");
   const [lists, setLists] = useState<ShoppingList[]>([])
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { user } = useAuth()
   const {toast} = useToast()
 
   useEffect(() => {
-    const storedList = getShoppingLists()
+    const storedList = getShoppingLists(user?.id)
     setLists(storedList)
-  }, [])
+  }, [user])
   
   const filteredLists = lists.filter((list) =>
     list.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -40,7 +42,7 @@ const ShoppingLists = () => {
       };
 
       //save to storage
-      saveShoppingList(newList)
+      saveShoppingList(newList, user?.id)
       
       //update state
       setLists([newList, ...lists]);
@@ -56,7 +58,7 @@ const ShoppingLists = () => {
   
   const handleDeleteList = (id: string, name: string) => {
     //delete from storage
-    deleteShoppingList(id)
+    deleteShoppingList(id, user?.id)
     //update state
     setLists(lists.filter(list => list.id !== id));
 

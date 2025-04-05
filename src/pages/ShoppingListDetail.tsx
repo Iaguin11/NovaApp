@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { deleteShoppingList, getShoppingListById, saveShoppingList, ShoppingListItem } from "@/utils/shoppingListsStorage";
 import { ShoppingListItem as ShoppingListItemComponent} from "@/components/ShoppingListItem";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 
 const ShoppingListDetail = () => {
@@ -28,36 +29,37 @@ const ShoppingListDetail = () => {
   const [listName, setListName] = useState("");
   const { toast } = useToast()
   const navigate = useNavigate()
+  const { user } = useAuth()
 
   useEffect(()=> {
     const loadList = () => {
-      const storedList = getShoppingListById(id)
+      const storedList = getShoppingListById(id, user?.id)
       if(storedList) {
         setList(storedList)
         setListName(storedList.name)
       }
     }
     loadList()
-  }, [id])
+  }, [id, user])
 
   useEffect(() => {
     const saveList = () => {
       if(list) {
         console.log("Saving list with", list.items.length, "items")
-        saveShoppingList({...list})
+        saveShoppingList({...list}, user?.id)
       }
     }
     saveList()
-  }, [list])
+  }, [list, user])
 
   useEffect(()=>{
     return () => {
       if(list) {
         console.log("Saving list on exit:", list.name, "with", list.items.length, "items")
-        saveShoppingList({...list})
+        saveShoppingList({...list}, user?.id)
       }
     }
-  }, [list])
+  }, [list, user])
   
   if (!list) {
     return (
