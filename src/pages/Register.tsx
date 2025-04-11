@@ -9,6 +9,7 @@ import { AnimatedContainer } from "@/utils/animations";
 import { Eye, EyeOff, UserPlus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import GoogleAccountsModal from "@/components/GoogleAccountsModal";
 
 const Register = () => {
   const [name, setName] = useState("")
@@ -16,7 +17,14 @@ const Register = () => {
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("")
-  const {register, isLoading} = useAuth()
+  const {
+    register, 
+    loginWithGoogle, 
+    isLoading,
+    showGoogleAccountsModal,
+    setShowGoogleAccountsModal,
+    handleGoogleAccountSelected
+  } = useAuth()
   const navigate = useNavigate()
   
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -37,8 +45,31 @@ const Register = () => {
       setError(errorMessage)
       toast.error(errorMessage)
     }
-    
   };
+
+  const handleGoogleLogin = async () => {
+    setError("")
+    try {
+      await loginWithGoogle()
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Erro ao iniciar login com Google"
+      console.error("Google login error:", error)
+      setError(errorMessage)
+      toast.error(errorMessage)
+    }
+  }
+
+  const handleGoogleAccountSelect = async (account: any) => {
+    try {
+      await handleGoogleAccountSelect(account)
+      toast.success("Login com Google realizado com sucesso!")
+      navigate("/dashboard")
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Erro ao fazer login com Google."
+      setError(errorMessage)
+      toast.error(errorMessage)
+    }
+  }
   
   return (
     <div className="min-h-screen flex items-center justify-center p-4 page-transition">
@@ -160,6 +191,11 @@ const Register = () => {
           </Card>
         </AnimatedContainer>
       </div>
+      <GoogleAccountsModal
+        isOpen={showGoogleAccountsModal}
+        onClose={() => setShowGoogleAccountsModal(false)}
+        onSelectAccount={handleGoogleAccountSelect}
+      />
     </div>
   );
 };

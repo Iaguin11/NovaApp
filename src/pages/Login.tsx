@@ -9,11 +9,19 @@ import { AnimatedContainer } from "@/utils/animations";
 import { Eye, EyeOff, LogIn } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import GoogleAccountsModal from "@/components/GoogleAccountsModal";
 
 const Login = () => {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const {login, isLoading} = useAuth()
+  const {
+    login, 
+    loginWithGoogle, 
+    isLoading,
+    showGoogleAccountsModal,
+    setShowGoogleAccountsModal,
+    handleGoogleAccountSelected
+  } = useAuth()
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("")
   const navigate = useNavigate()
@@ -34,6 +42,31 @@ const Login = () => {
       toast.error(errorMessage)
     }
   }
+
+  const handleGoogleLogin = async () => {
+    setError("");
+    try {
+      await loginWithGoogle();
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Erro ao iniciar login com Google.";
+      console.error("Google login error:", error);
+      setError(errorMessage);
+      toast.error(errorMessage);
+    }
+  };
+
+  const handleGoogleAccountSelect = async (account: any) => {
+    try {
+      await handleGoogleAccountSelected(account);
+      toast.success("Login com Google realizado com sucesso!");
+      navigate("/dashboard");
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Erro ao fazer login com Google.";
+      setError(errorMessage);
+      toast.error(errorMessage);
+    }
+  };
+
   
   return (
     <div className="min-h-screen flex items-center justify-center p-4 page-transition">
@@ -149,6 +182,11 @@ const Login = () => {
           </Card>
         </AnimatedContainer>
       </div>
+      <GoogleAccountsModal 
+         isOpen={showGoogleAccountsModal}
+         onClose={() => setShowGoogleAccountsModal(false)}
+         onSelectAccount={handleGoogleAccountSelect}
+      />
     </div>
   );
 };

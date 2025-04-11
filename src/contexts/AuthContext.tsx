@@ -5,6 +5,8 @@ interface User {
   id: string;
   name: string;
   email: string;
+  provider?: string
+  photoUrl?: string
 }
 
 interface AuthContextType {
@@ -14,7 +16,12 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
+  showGoogleAccountsModal: boolean;
+  loginWithGoogle: () => Promise<void>;
+  setShowGoogleAccountsModal: (show: boolean) => void
+  handleGoogleAccountSelected: (account: {id: string, name: string, email: string, photoUrl?: string}) => void
 }
+
 const USER_STORAGE_KEY = "user"
 const USERS_STORAGE_KEY = "registered_users"
 
@@ -41,6 +48,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showGoogleAccountsModal, setShowGoogleAccountsModal] = useState(false)
 
   useEffect(() => {
     const checkAuthStatus = async () => {
@@ -124,6 +132,56 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsLoading(false);
     }
   };
+
+  const loginWithGoogle = async () => {
+    setShowGoogleAccountsModal(true);
+  };
+  
+  const handleGoogleAccountSelected = async (account: {id: string, name: string, email: string, photoUrl?: string}) => {
+    setIsLoading(true);
+    
+    try {
+      const registeredUsers = getRegisteredUsers();
+  
+      let existingUser = registeredUsers.find(user => user.email === account.email);
+      
+      if (!existingUser) {
+        const newUser: StoredUser = {
+          id: account.id,
+          name: account.name,
+          email: account.email,
+          password: 'google-auth',
+          provider: 'google',
+          photoUrl: account.photoUrl
+        };
+        
+        registeredUsers.push(newUser);
+        saveRegisteredUsers(registeredUsers);
+
+        existingUser = newUser;
+      }
+
+      const userData: User = {
+        id: existingUser.id,
+        name: existingUser.name,
+        email: existingUser.email,
+        provider: 'google',
+        photoUrl: existingUser.photoUrl
+      };
+      
+      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userData));
+      setUser(userData);
+      
+      console.log("Google login successful:", userData);
+      
+    } catch (error) {
+      console.error("Google login failed:", error);
+      throw new Error("Falha ao fazer login com Google. Tente novamente mais tarde.");
+    } finally {
+      setIsLoading(false);
+      setShowGoogleAccountsModal(false);
+    }
+  };
   
   const logout = () => {
     localStorage.removeItem(USER_STORAGE_KEY);
@@ -138,7 +196,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading,
         login,
         register,
+        loginWithGoogle,
         logout,
+        showGoogleAccountsModal,
+        setShowGoogleAccountsModal,
+        handleGoogleAccountSelected
       }}
     >
       {children}
